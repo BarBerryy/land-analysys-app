@@ -777,7 +777,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
     const corrections = [];
 
     // 1. Готовность объекта (наш объект всегда 0%)
-    const readinessCorr = (competitor.readiness * 0.15 / 50);
+    const readinessCorr = (competitor.readiness * 0.005);
     const priceAfterReadiness = price * (1 - readinessCorr);
     corrections.push({ name: 'Готовность объекта', value: -readinessCorr * 100, price: priceAfterReadiness });
 
