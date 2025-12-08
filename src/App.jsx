@@ -677,18 +677,21 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
     ));
   };
 
-  // Состояние для редактируемых весовых коэффициентов
-  const [manualWeights, setManualWeights] = useState(() => {
-    // Инициализируем веса от 1 до N
-    return selectedCompetitors.map((_, idx) => idx + 1);
-  });
+  // Получаем весовые коэффициенты из plotData или создаем новые
+  const getWeights = () => {
+    const savedWeights = plotData.competitorWeights || {};
+    return selectedCompetitors.map((c, idx) => savedWeights[c.id] ?? (idx + 1));
+  };
 
-  // Обновляем веса при изменении списка конкурентов
-  React.useEffect(() => {
-    if (manualWeights.length !== selectedCompetitors.length) {
-      setManualWeights(selectedCompetitors.map((_, idx) => idx + 1));
-    }
-  }, [selectedCompetitors.length]);
+  const manualWeights = getWeights();
+
+  // Функция обновления весов
+  const updateWeight = (competitorId, weight) => {
+    if (!setPlotData) return;
+    const newWeights = { ...plotData.competitorWeights };
+    newWeights[competitorId] = weight;
+    setPlotData({ ...plotData, competitorWeights: newWeights });
+  };
 
   // Проверка на дубликаты весов
   const hasDuplicateWeight = (weight) => {
@@ -1422,19 +1425,18 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     <div className="text-xs text-emerald-500 mt-1">Чем выше значение, тем больше вес</div>
                   </td>
                   <td className="p-3 text-center bg-emerald-800/30">—</td>
-                  {manualWeights.map((w, idx) => {
+                  {selectedCompetitors.map((comp, idx) => {
+                    const w = manualWeights[idx];
                     const isDuplicate = hasDuplicateWeight(w);
                     return (
-                      <td key={idx} className="p-3 text-center">
+                      <td key={comp.id} className="p-3 text-center">
                         {isEditable ? (
                           <input
                             type="number"
                             min="1"
                             value={w}
                             onChange={(e) => {
-                              const newWeights = [...manualWeights];
-                              newWeights[idx] = parseInt(e.target.value) || 1;
-                              setManualWeights(newWeights);
+                              updateWeight(comp.id, parseInt(e.target.value) || 1);
                             }}
                             className={`w-16 px-2 py-1 rounded text-center font-mono focus:outline-none ${
                               isDuplicate 
@@ -2065,8 +2067,9 @@ const ElasticityTab = ({ data, competitors, competitorsOnly = false }) => {
 // Основной компонент приложения
 export default function App() {
   const [activeTab, setActiveTab] = useState('general');
-  const [competitors, setCompetitors] = useState(initialCompetitors);
-  const [plotData, setPlotData] = useState({
+  
+  // Начальные данные участка
+  const defaultPlotData = {
     plotName: 'Энергетиков',
     executionDate: new Date().toISOString(),
     area: '3.63',
@@ -2084,8 +2087,55 @@ export default function App() {
     socialInfra: { schools: 0, kindergartens: 0, malls: false, clinics: false },
     viewCharacteristics: { gsk: true },
     apartmentMix: { studio: 15, one: 15, onePlus: 20, two: 15, twoPlus: 20, three: 10, four: 5 },
-    prices: { studio: 160000, one: 154000, onePlus: 148000, two: 142000, twoPlus: 136000, three: 130000, four: 125000 }
+    prices: { studio: 160000, one: 154000, onePlus: 148000, two: 142000, twoPlus: 136000, three: 130000, four: 125000 },
+    competitorWeights: {}
+  };
+
+  // Загрузка данных из localStorage при инициализации
+  const [competitors, setCompetitors] = useState(() => {
+    try {
+      const saved = localStorage.getItem('landAnalysis_competitors');
+      return saved ? JSON.parse(saved) : initialCompetitors;
+    } catch {
+      return initialCompetitors;
+    }
   });
+
+  const [plotData, setPlotData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('landAnalysis_plotData');
+      return saved ? JSON.parse(saved) : defaultPlotData;
+    } catch {
+      return defaultPlotData;
+    }
+  });
+
+  // Сохранение данных в localStorage при изменении
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('landAnalysis_competitors', JSON.stringify(competitors));
+    } catch (e) {
+      console.warn('Не удалось сохранить данные конкурентов:', e);
+    }
+  }, [competitors]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('landAnalysis_plotData', JSON.stringify(plotData));
+    } catch (e) {
+      console.warn('Не удалось сохранить данные участка:', e);
+    }
+  }, [plotData]);
+
+  // Функция сброса данных к начальным значениям
+  const resetToDefaults = () => {
+    if (window.confirm('Вы уверены, что хотите сбросить все данные к начальным значениям?')) {
+      setPlotData(defaultPlotData);
+      setCompetitors(initialCompetitors);
+      localStorage.removeItem('landAnalysis_plotData');
+      localStorage.removeItem('landAnalysis_competitors');
+    }
+  };
 
   const tabs = [
     { id: 'general', icon: MapPin, label: 'Общая информация' },
@@ -2128,9 +2178,17 @@ export default function App() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-emerald-800">
-          <div className="text-emerald-500 text-xs">Версия 1.0</div>
+        <div className="p-4 border-t border-emerald-800 space-y-3">
+          <button
+            onClick={resetToDefaults}
+            className="w-full px-3 py-2 text-xs bg-emerald-900/50 hover:bg-red-900/50 border border-emerald-700 hover:border-red-600 rounded-lg text-emerald-400 hover:text-red-400 transition-colors flex items-center justify-center gap-2"
+          >
+            <X className="w-3 h-3" />
+            Сбросить данные
+          </button>
+          <div className="text-emerald-500 text-xs">Версия 1.1</div>
           <div className="text-emerald-400 text-xs">© 2024 Аналитика ЗУ</div>
+          <div className="text-emerald-600 text-xs">Данные сохраняются автоматически</div>
         </div>
       </nav>
 
