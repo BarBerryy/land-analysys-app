@@ -777,17 +777,13 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
     const corrections = [];
 
     // 1. Готовность объекта (наш объект всегда 0%)
-    const readinessCorr = (competitor.readiness * 0.005);
+    const readinessCorr = (competitor.readiness * 0.15 / 50);
     const priceAfterReadiness = price * (1 - readinessCorr);
     corrections.push({ name: 'Готовность объекта', value: -readinessCorr * 100, price: priceAfterReadiness });
 
     // 2. Расстояние до остановки
-    let distanceCorr = 0;
-    if (competitor.distanceToStop > 500) {
-      distanceCorr = ((competitor.distanceToStop - 500) / 100) * 0.5;
-    } else if (competitor.distanceToStop < plotData.distanceToStop) {
-      distanceCorr = ((plotData.distanceToStop - competitor.distanceToStop) / 100) * 0.5;
-    }
+    // Корректировка = (Расстояние конкурента - Расстояние нашего участка) / 200, в %
+    const distanceCorr = ((competitor.distanceToStop || 0) - (plotData.distanceToStop || 0)) / 200;
     const priceAfterDistance = priceAfterReadiness * (1 + distanceCorr / 100);
     corrections.push({ name: 'Расстояние до остановки', value: distanceCorr, price: priceAfterDistance });
 
