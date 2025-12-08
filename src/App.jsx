@@ -669,6 +669,73 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
   );
 };
 
+// Inline dropdown для таблицы (вынесен для предотвращения потери фокуса)
+const InlineDropdown = ({ value, options, onChange, disabled = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  if (disabled) {
+    return <span className="text-emerald-300">{value}</span>;
+  }
+  
+  return (
+    <div className="relative inline-block">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 text-white hover:text-emerald-300 transition-colors"
+      >
+        {value}
+        <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="absolute z-50 left-0 mt-1 bg-emerald-900 border border-emerald-700 rounded-lg shadow-xl overflow-hidden min-w-[140px]">
+          {options.map((option) => (
+            <button
+              key={option}
+              onClick={() => { onChange(option); setIsOpen(false); }}
+              className={`w-full px-3 py-2 text-left text-sm hover:bg-emerald-800 transition-colors ${value === option ? 'bg-emerald-700 text-white' : 'text-emerald-100'}`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Inline input для редактирования числовых значений (вынесен для предотвращения потери фокуса)
+const InlineNumberInput = ({ value, onChange, disabled = false, min = 0 }) => {
+  if (disabled) {
+    return <span className="text-emerald-300">{value}</span>;
+  }
+  return (
+    <input
+      type="number"
+      min={min}
+      value={value}
+      onChange={(e) => onChange(parseInt(e.target.value) || 0)}
+      className="w-12 px-1 py-0.5 bg-emerald-900/50 border border-emerald-700 rounded text-white text-center text-sm focus:outline-none focus:border-emerald-500"
+    />
+  );
+};
+
+// Inline toggle для +/- (вынесен для предотвращения потери фокуса)
+const InlineToggle = ({ value, onChange, disabled = false }) => {
+  if (disabled) {
+    return <span className="text-emerald-300">{value ? '+' : '-'}</span>;
+  }
+  return (
+    <button
+      onClick={() => onChange(!value)}
+      className={`px-2 py-0.5 rounded text-sm font-semibold transition-colors ${
+        value ? 'bg-green-700 text-green-100 hover:bg-green-600' : 'bg-red-900/50 text-red-300 hover:bg-red-800'
+      }`}
+    >
+      {value ? '+' : '-'}
+    </button>
+  );
+};
+
 // Вкладка корректировок
 const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, priceType = 'realization' }) => {
   const selectedCompetitors = competitors.filter(c => c.selected);
@@ -702,73 +769,6 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
   // Проверка на дубликаты весов
   const hasDuplicateWeight = (weight) => {
     return manualWeights.filter(w => w === weight).length > 1;
-  };
-
-  // Inline dropdown для таблицы
-  const InlineDropdown = ({ value, options, onChange, disabled = false }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    
-    if (disabled) {
-      return <span className="text-emerald-300">{value}</span>;
-    }
-    
-    return (
-      <div className="relative inline-block">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 text-white hover:text-emerald-300 transition-colors"
-        >
-          {value}
-          <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
-        {isOpen && (
-          <div className="absolute z-50 left-0 mt-1 bg-emerald-900 border border-emerald-700 rounded-lg shadow-xl overflow-hidden min-w-[140px]">
-            {options.map((option) => (
-              <button
-                key={option}
-                onClick={() => { onChange(option); setIsOpen(false); }}
-                className={`w-full px-3 py-2 text-left text-sm hover:bg-emerald-800 transition-colors ${value === option ? 'bg-emerald-700 text-white' : 'text-emerald-100'}`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Inline input для редактирования числовых значений
-  const InlineNumberInput = ({ value, onChange, disabled = false, min = 0 }) => {
-    if (disabled) {
-      return <span className="text-emerald-300">{value}</span>;
-    }
-    return (
-      <input
-        type="number"
-        min={min}
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-        className="w-12 px-1 py-0.5 bg-emerald-900/50 border border-emerald-700 rounded text-white text-center text-sm focus:outline-none focus:border-emerald-500"
-      />
-    );
-  };
-
-  // Inline toggle для +/-
-  const InlineToggle = ({ value, onChange, disabled = false }) => {
-    if (disabled) {
-      return <span className="text-emerald-300">{value ? '+' : '-'}</span>;
-    }
-    return (
-      <button
-        onClick={() => onChange(!value)}
-        className={`px-2 py-0.5 rounded text-sm font-semibold transition-colors ${
-          value ? 'bg-green-700 text-green-100 hover:bg-green-600' : 'bg-red-900/50 text-red-300 hover:bg-red-800'
-        }`}
-      >
-        {value ? '+' : '-'}
-      </button>
-    );
   };
 
   // Расчет корректировок
@@ -968,7 +968,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[0].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1007,7 +1007,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[1].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1087,7 +1087,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[2].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1181,7 +1181,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[3].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1218,7 +1218,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[4].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1266,7 +1266,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[5].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1303,7 +1303,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[6].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1340,7 +1340,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[7].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1373,7 +1373,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[8].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1403,7 +1403,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                     const val = r.corrections[9].value;
                     return (
                       <td key={r.competitor.id} className={`p-3 text-center font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {val > 0 ? '+' : ''}{val.toFixed(1)}%
+                        {val > 0 ? '+' : ''}{val.toFixed(2)}%
                       </td>
                     );
                   })}
@@ -1460,7 +1460,7 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                   <td className="p-3 text-center bg-emerald-800/30">—</td>
                   {normalizedWeights.map((w, idx) => (
                     <td key={idx} className="p-3 text-center text-emerald-200 font-mono">
-                      {(w * 100).toFixed(1)}%
+                      {(w * 100).toFixed(2)}%
                     </td>
                   ))}
                 </tr>
