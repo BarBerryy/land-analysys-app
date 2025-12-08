@@ -397,49 +397,36 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
           {/* Инфраструктура */}
           <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-800">
             <h3 className="text-emerald-100 font-semibold mb-4 flex items-center gap-2">
-              <Building2 className="w-4 h-4" /> Инфраструктура (1 км)
+              <Building2 className="w-4 h-4" /> Социальная инфраструктура (1 км)
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 bg-emerald-900/50 rounded-lg p-2">
+              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
                 <School className="w-4 h-4 text-emerald-400" />
-                <input
-                  type="number"
-                  value={data.infrastructure?.schools || 0}
-                  onChange={(e) => setData({...data, infrastructure: {...data.infrastructure, schools: parseInt(e.target.value) || 0}})}
-                  className="w-12 bg-transparent text-white text-center border-b border-emerald-600 focus:outline-none"
-                />
-                <span className="text-emerald-300 text-xs">Школ</span>
+                <span className="text-white font-semibold">{data.socialInfra?.schools || 0}</span>
+                <span className="text-emerald-300 text-xs">Школ/Гимн./Лицеев</span>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-900/50 rounded-lg p-2">
+              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
                 <Home className="w-4 h-4 text-emerald-400" />
-                <input
-                  type="number"
-                  value={data.infrastructure?.kindergartens || 0}
-                  onChange={(e) => setData({...data, infrastructure: {...data.infrastructure, kindergartens: parseInt(e.target.value) || 0}})}
-                  className="w-12 bg-transparent text-white text-center border-b border-emerald-600 focus:outline-none"
-                />
-                <span className="text-emerald-300 text-xs">Садов</span>
+                <span className="text-white font-semibold">{data.socialInfra?.kindergartens || 0}</span>
+                <span className="text-emerald-300 text-xs">Детских садов</span>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-900/50 rounded-lg p-2">
+              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
                 <ShoppingBag className="w-4 h-4 text-emerald-400" />
-                <input
-                  type="number"
-                  value={data.infrastructure?.malls || 0}
-                  onChange={(e) => setData({...data, infrastructure: {...data.infrastructure, malls: parseInt(e.target.value) || 0}})}
-                  className="w-12 bg-transparent text-white text-center border-b border-emerald-600 focus:outline-none"
-                />
-                <span className="text-emerald-300 text-xs">ТЦ</span>
+                <span className={`font-semibold ${data.socialInfra?.malls ? 'text-green-400' : 'text-red-400'}`}>
+                  {data.socialInfra?.malls ? '+' : '-'}
+                </span>
+                <span className="text-emerald-300 text-xs">Торговые центры</span>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-900/50 rounded-lg p-2">
+              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
                 <Stethoscope className="w-4 h-4 text-emerald-400" />
-                <input
-                  type="number"
-                  value={data.infrastructure?.clinics || 0}
-                  onChange={(e) => setData({...data, infrastructure: {...data.infrastructure, clinics: parseInt(e.target.value) || 0}})}
-                  className="w-12 bg-transparent text-white text-center border-b border-emerald-600 focus:outline-none"
-                />
-                <span className="text-emerald-300 text-xs">Поликл.</span>
+                <span className={`font-semibold ${data.socialInfra?.clinics ? 'text-green-400' : 'text-red-400'}`}>
+                  {data.socialInfra?.clinics ? '+' : '-'}
+                </span>
+                <span className="text-emerald-300 text-xs">Поликлиники</span>
               </div>
+            </div>
+            <div className="mt-3 text-xs text-emerald-500 italic">
+              * Редактируется в разделе "Корректировки (Реализ.)"
             </div>
           </div>
 
@@ -448,9 +435,28 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
             <h3 className="text-emerald-100 font-semibold mb-4 flex items-center gap-2">
               <Bus className="w-4 h-4" /> Транспортная доступность
             </h3>
-            <InputField label="Расстояние до остановки" value={data.distanceToStop} onChange={(v) => setData({...data, distanceToStop: v})} suffix="м" placeholder="0" />
-            <div className="mt-3 text-emerald-300 text-sm">
-              Маршрутов транспорта: <span className="text-white font-semibold">{data.transportRoutes || 1}</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
+                <span className="text-emerald-300 text-sm">Расстояние до остановки</span>
+                <span className="text-white font-semibold">{data.distanceToStop || 0} м</span>
+              </div>
+              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
+                <span className="text-emerald-300 text-sm">Автобусы/Троллейбусы</span>
+                <span className="text-white font-semibold">{data.transport?.busTrolley || 0}</span>
+              </div>
+              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
+                <span className="text-emerald-300 text-sm">Трамваи</span>
+                <span className="text-white font-semibold">{data.transport?.tram || 0}</span>
+              </div>
+              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
+                <span className="text-emerald-300 text-sm">Станции метро</span>
+                <span className={`font-semibold ${data.transport?.metro ? 'text-green-400' : 'text-red-400'}`}>
+                  {data.transport?.metro ? '+' : '-'}
+                </span>
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-emerald-500 italic">
+              * Редактируется в разделе "Корректировки (Реализ.)"
             </div>
           </div>
         </div>
