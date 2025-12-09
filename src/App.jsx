@@ -24,7 +24,7 @@ const initialCompetitors = [
     transport: { buses: 0, trolleys: 0, trams: 2, metro: 0 },
     infrastructure: { schools: 0, kindergartens: 0, malls: 1, clinics: 0 },
     reputation: '+',
-    viewCharacteristics: { gsk: true, promzona: false },
+    viewCharacteristics: { gsk: true, industrial: false, railway: false, sea: false, panorama: false, river: false, forest: false, cemetery: false },
     apartmentType: 'Евро',
     prices: { studio: [153, 182], one: [142, 174], two: [129, 169], three: [130, 144] }
   },
@@ -45,7 +45,7 @@ const initialCompetitors = [
     transport: { buses: 0, trolleys: 0, trams: 2, metro: 0 },
     infrastructure: { schools: 2, kindergartens: 0, malls: 1, clinics: 0 },
     reputation: '+',
-    viewCharacteristics: { gsk: true, promzona: false },
+    viewCharacteristics: { gsk: true, industrial: false, railway: false, sea: false, panorama: false, river: false, forest: false, cemetery: false },
     apartmentType: 'Евро',
     prices: { studio: [null, null], one: [null, null], two: [null, null], three: [null, null] }
   },
@@ -66,7 +66,7 @@ const initialCompetitors = [
     transport: { buses: 2, trolleys: 0, trams: 0, metro: 0 },
     infrastructure: { schools: 0, kindergartens: 4, malls: 1, clinics: 0 },
     reputation: '-',
-    viewCharacteristics: { gsk: false, promzona: false },
+    viewCharacteristics: { gsk: false, industrial: false, railway: false, sea: false, panorama: false, river: false, forest: false, cemetery: false },
     apartmentType: 'Евро',
     prices: { studio: [186, 224], one: [174, 182], two: [null, null], three: [165, 169] }
   },
@@ -87,7 +87,7 @@ const initialCompetitors = [
     transport: { buses: 5, trolleys: 0, trams: 0, metro: 0 },
     infrastructure: { schools: 1, kindergartens: 3, malls: 0, clinics: 0 },
     reputation: '-',
-    viewCharacteristics: { gsk: true, promzona: true },
+    viewCharacteristics: { gsk: true, industrial: true, railway: false, sea: false, panorama: false, river: false, forest: false, cemetery: false },
     apartmentType: 'Евро',
     prices: { studio: [179, 181], one: [169, 171], two: [164, null], three: [153, 163] }
   },
@@ -108,7 +108,7 @@ const initialCompetitors = [
     transport: { buses: 1, trolleys: 0, trams: 0, metro: 0 },
     infrastructure: { schools: 0, kindergartens: 0, malls: 1, clinics: 0 },
     reputation: '+',
-    viewCharacteristics: { gsk: true, promzona: false },
+    viewCharacteristics: { gsk: true, industrial: false, railway: false, sea: false, panorama: false, river: false, forest: false, cemetery: false },
     apartmentType: 'Евро',
     prices: { studio: [null, null], one: [148, 177], two: [142, 170], three: [140, 162] }
   }
@@ -732,6 +732,94 @@ const InlineToggle = ({ value, onChange, disabled = false }) => {
   );
 };
 
+// Константы для видовых характеристик
+const VIEW_CHARACTERISTICS_OPTIONS = [
+  { key: 'sea', label: 'Море', correction: 10 },
+  { key: 'panorama', label: 'Панорамный вид', correction: 10 },
+  { key: 'river', label: 'Река/озеро', correction: 10 },
+  { key: 'forest', label: 'Лес/парк/лесопарк', correction: 5 },
+  { key: 'railway', label: 'Ж/Д', correction: -5 },
+  { key: 'gsk', label: 'ГСК', correction: -5 },
+  { key: 'industrial', label: 'Промзона/ЛЭП/Свалка', correction: -10 },
+  { key: 'cemetery', label: 'Кладбище', correction: -10 }
+];
+
+// Компонент мультиселекта для видовых характеристик
+const ViewCharacteristicsSelect = ({ value = {}, onChange, disabled = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Получаем список выбранных характеристик
+  const selectedLabels = VIEW_CHARACTERISTICS_OPTIONS
+    .filter(opt => value[opt.key])
+    .map(opt => opt.label);
+  
+  const displayText = selectedLabels.length > 0 ? selectedLabels.join(', ') : '—';
+  
+  const handleToggle = (key) => {
+    if (disabled) return;
+    onChange({ ...value, [key]: !value[key] });
+  };
+
+  if (disabled) {
+    return (
+      <div className="text-emerald-300 text-xs text-left px-2 py-1 max-w-[150px]">
+        {displayText}
+      </div>
+    );
+  }
+  
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="min-w-[140px] max-w-[200px] px-2 py-1 bg-emerald-900/50 border border-emerald-700 rounded text-white text-xs text-left hover:border-emerald-500 transition-colors flex items-center justify-between gap-1"
+      >
+        <span className="truncate flex-1">{displayText}</span>
+        <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="absolute z-50 w-56 mt-1 bg-emerald-900 border border-emerald-700 rounded-lg shadow-xl overflow-hidden">
+          {VIEW_CHARACTERISTICS_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => handleToggle(opt.key)}
+              className="w-full px-3 py-2 text-left hover:bg-emerald-800 transition-colors text-sm flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <span className={`w-4 h-4 rounded border flex items-center justify-center ${
+                  value[opt.key] ? 'bg-emerald-500 border-emerald-500' : 'border-emerald-600'
+                }`}>
+                  {value[opt.key] && <Check className="w-3 h-3 text-white" />}
+                </span>
+                <span className="text-emerald-100">{opt.label}</span>
+              </span>
+              <span className={`text-xs font-mono ${opt.correction > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {opt.correction > 0 ? '+' : ''}{opt.correction}%
+              </span>
+            </button>
+          ))}
+          <div className="border-t border-emerald-700 p-2">
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-full py-1 text-xs text-emerald-400 hover:text-emerald-300"
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Функция для отображения видовых характеристик в виде текста
+const getViewCharacteristicsText = (viewChars = {}) => {
+  const selected = VIEW_CHARACTERISTICS_OPTIONS
+    .filter(opt => viewChars[opt.key])
+    .map(opt => opt.label);
+  return selected.length > 0 ? selected.join(', ') : '—';
+};
+
 // Вкладка корректировок
 const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, priceType = 'realization' }) => {
   const selectedCompetitors = competitors.filter(c => c.selected);
@@ -865,14 +953,39 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
 
     // 9. Видовые характеристики
     let viewCorr = 0;
-    if (competitor.viewCharacteristics?.promzona) viewCorr += 10;
-    if (!competitor.viewCharacteristics?.gsk && plotData.viewCharacteristics?.gsk) viewCorr -= 5;
+    const plotView = plotData.viewCharacteristics || {};
+    const compView = competitor.viewCharacteristics || {};
+    
+    // Проходим по всем характеристикам и считаем корректировку
+    VIEW_CHARACTERISTICS_OPTIONS.forEach(opt => {
+      const plotHas = plotView[opt.key] || false;
+      const compHas = compView[opt.key] || false;
+      
+      if (plotHas && !compHas) {
+        // У нас есть, у конкурента нет - применяем корректировку как есть
+        viewCorr += opt.correction;
+      } else if (!plotHas && compHas) {
+        // У нас нет, у конкурента есть - применяем противоположную корректировку
+        viewCorr -= opt.correction;
+      }
+      // Если оба имеют или оба не имеют - корректировка 0
+    });
+    
+    // Ограничение корректировки видовых характеристик до ±15%
+    viewCorr = Math.max(-15, Math.min(15, viewCorr));
+    
     const priceAfterView = priceAfterClass * (1 + viewCorr / 100);
     corrections.push({ name: 'Видовые характеристики', value: viewCorr, price: priceAfterView });
 
     // 10. Характеристики квартир
-    const priceAfterApt = priceAfterView;
-    corrections.push({ name: 'Характеристики квартир', value: 0, price: priceAfterApt });
+    let aptCorr = 0;
+    const aptOrder = ['Стандарт', 'Евро', 'Уникальное'];
+    const plotAptIdx = aptOrder.indexOf(plotData.apartmentType || 'Евро');
+    const compAptIdx = aptOrder.indexOf(competitor.apartmentType || 'Евро');
+    if (compAptIdx > plotAptIdx) aptCorr = (compAptIdx - plotAptIdx) * -10;
+    else if (compAptIdx < plotAptIdx) aptCorr = (plotAptIdx - compAptIdx) * 10;
+    const priceAfterApt = priceAfterView * (1 + aptCorr / 100);
+    corrections.push({ name: 'Характеристики квартир', value: aptCorr, price: priceAfterApt });
 
     return { corrections, finalPrice: priceAfterApt };
   };
@@ -959,9 +1072,9 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
 
                 {/* Готовность объекта */}
-                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30">
-                  <td className="p-3 text-emerald-300 sticky left-0 bg-emerald-950/95">Готовность объекта, %</td>
-                  <td className="p-3 text-center text-emerald-400 bg-emerald-800/30">0%</td>
+                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30 bg-emerald-800/20">
+                  <td className="p-3 text-emerald-200 font-semibold sticky left-0 bg-emerald-900/95">Готовность объекта, %</td>
+                  <td className="p-3 text-center text-emerald-400 bg-emerald-700/30">0%</td>
                   {correctionResults.map(r => (
                     <td key={r.competitor.id} className="p-3 text-center text-white">{r.competitor.readiness}%</td>
                   ))}
@@ -989,9 +1102,9 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
 
                 {/* Расстояние до остановки */}
-                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30">
-                  <td className="p-3 text-emerald-300 sticky left-0 bg-emerald-950/95">Расстояние до остановки, м</td>
-                  <td className="p-3 text-center bg-emerald-800/30">
+                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30 bg-emerald-800/20">
+                  <td className="p-3 text-emerald-200 font-semibold sticky left-0 bg-emerald-900/95">Расстояние до остановки, м</td>
+                  <td className="p-3 text-center bg-emerald-700/30">
                     {isEditable ? (
                       <InlineNumberInput 
                         value={plotData.distanceToStop || 0} 
@@ -1202,9 +1315,9 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
 
                 {/* Материал стен */}
-                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30">
-                  <td className="p-3 text-emerald-300 sticky left-0 bg-emerald-950/95">Материал стен</td>
-                  <td className="p-3 text-center bg-emerald-800/30">
+                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30 bg-emerald-800/20">
+                  <td className="p-3 text-emerald-200 font-semibold sticky left-0 bg-emerald-900/95">Материал стен</td>
+                  <td className="p-3 text-center bg-emerald-700/30">
                     <InlineDropdown 
                       value={plotData.wallMaterial} 
                       options={['Панель', 'Кирпич', 'Монолит-кирпич']}
@@ -1239,9 +1352,9 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
 
                 {/* Репутация застройщика */}
-                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30">
-                  <td className="p-3 text-emerald-300 sticky left-0 bg-emerald-950/95">Репутация застройщика</td>
-                  <td className="p-3 text-center bg-emerald-800/30">
+                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30 bg-emerald-800/20">
+                  <td className="p-3 text-emerald-200 font-semibold sticky left-0 bg-emerald-900/95">Репутация застройщика</td>
+                  <td className="p-3 text-center bg-emerald-700/30">
                     {isEditable ? (
                       <InlineToggle 
                         value={plotData.reputation === '+'}
@@ -1287,9 +1400,9 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
 
                 {/* Отделка */}
-                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30">
-                  <td className="p-3 text-emerald-300 sticky left-0 bg-emerald-950/95">Отделка</td>
-                  <td className="p-3 text-center bg-emerald-800/30">
+                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30 bg-emerald-800/20">
+                  <td className="p-3 text-emerald-200 font-semibold sticky left-0 bg-emerald-900/95">Отделка</td>
+                  <td className="p-3 text-center bg-emerald-700/30">
                     <InlineDropdown 
                       value={plotData.finishing} 
                       options={['Черновая', 'Предчистовая', 'Чистовая']}
@@ -1324,9 +1437,9 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
 
                 {/* Класс жилья */}
-                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30">
-                  <td className="p-3 text-emerald-300 sticky left-0 bg-emerald-950/95">Класс жилья</td>
-                  <td className="p-3 text-center bg-emerald-800/30">
+                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30 bg-emerald-800/20">
+                  <td className="p-3 text-emerald-200 font-semibold sticky left-0 bg-emerald-900/95">Класс жилья</td>
+                  <td className="p-3 text-center bg-emerald-700/30">
                     <InlineDropdown 
                       value={plotData.housingClass} 
                       options={['Стандарт', 'Комфорт', 'Комфорт+', 'Бизнес', 'Элит']}
@@ -1361,13 +1474,22 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
 
                 {/* Видовые характеристики */}
-                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30">
-                  <td className="p-3 text-emerald-300 sticky left-0 bg-emerald-950/95">Видовые характеристики</td>
-                  <td className="p-3 text-center text-emerald-400 bg-emerald-800/30">—</td>
+                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30 bg-emerald-800/20">
+                  <td className="p-3 text-emerald-200 font-semibold sticky left-0 bg-emerald-900/95">Видовые характеристики</td>
+                  <td className="p-3 text-center bg-emerald-700/30">
+                    <ViewCharacteristicsSelect
+                      value={plotData.viewCharacteristics || {}}
+                      onChange={(v) => setPlotData({...plotData, viewCharacteristics: v})}
+                      disabled={!isEditable}
+                    />
+                  </td>
                   {correctionResults.map(r => (
-                    <td key={r.competitor.id} className="p-3 text-center text-white text-xs">
-                      {r.competitor.viewCharacteristics?.gsk ? 'ГСК' : ''} 
-                      {r.competitor.viewCharacteristics?.promzona ? ' Промзона' : ''}
+                    <td key={r.competitor.id} className="p-3 text-center text-white text-xs max-w-[150px]">
+                      <ViewCharacteristicsSelect
+                        value={r.competitor.viewCharacteristics || {}}
+                        onChange={(v) => updateCompetitor(r.competitor.id, 'viewCharacteristics', v)}
+                        disabled={!isEditable}
+                      />
                     </td>
                   ))}
                 </tr>
@@ -1394,11 +1516,25 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
 
                 {/* Характеристики квартир */}
-                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30">
-                  <td className="p-3 text-emerald-300 sticky left-0 bg-emerald-950/95">Характеристики квартир</td>
-                  <td className="p-3 text-center text-emerald-400 bg-emerald-800/30">—</td>
+                <tr className="border-b border-emerald-800/50 hover:bg-emerald-900/30 bg-emerald-800/20">
+                  <td className="p-3 text-emerald-200 font-semibold sticky left-0 bg-emerald-900/95">Характеристики квартир</td>
+                  <td className="p-3 text-center bg-emerald-700/30">
+                    <InlineDropdown 
+                      value={plotData.apartmentType || 'Евро'} 
+                      options={['Стандарт', 'Евро', 'Уникальное']}
+                      onChange={(v) => setPlotData({...plotData, apartmentType: v})}
+                      disabled={!isEditable}
+                    />
+                  </td>
                   {correctionResults.map(r => (
-                    <td key={r.competitor.id} className="p-3 text-center text-white">{r.competitor.apartmentType || '—'}</td>
+                    <td key={r.competitor.id} className="p-3 text-center">
+                      <InlineDropdown 
+                        value={r.competitor.apartmentType || 'Евро'} 
+                        options={['Стандарт', 'Евро', 'Уникальное']}
+                        onChange={(v) => updateCompetitor(r.competitor.id, 'apartmentType', v)}
+                        disabled={!isEditable}
+                      />
+                    </td>
                   ))}
                 </tr>
                 <tr className="border-b border-emerald-800/50 bg-emerald-900/20">
@@ -2224,10 +2360,11 @@ export default function App() {
     reputation: '-',
     floors: '12 - 15',
     productAnalog: 'Беседа',
+    apartmentType: 'Евро',
     distanceToStop: 250,
     transport: { busTrolley: 1, tram: 0, metro: false },
     socialInfra: { schools: 0, kindergartens: 0, malls: false, clinics: false },
-    viewCharacteristics: { gsk: true },
+    viewCharacteristics: { gsk: true, industrial: false, railway: false, sea: false, panorama: false, river: false, forest: false, cemetery: false },
     apartmentMix: { studio: 15, one: 15, onePlus: 20, two: 15, twoPlus: 20, three: 10, four: 5 },
     prices: { studio: 160000, one: 154000, onePlus: 148000, two: 142000, twoPlus: 136000, three: 130000, four: 125000 },
     competitorWeights: {}
@@ -2237,7 +2374,24 @@ export default function App() {
   const [competitors, setCompetitors] = useState(() => {
     try {
       const saved = localStorage.getItem('landAnalysis_competitors');
-      return saved ? JSON.parse(saved) : initialCompetitors;
+      if (saved) {
+        // Миграция старых данных viewCharacteristics
+        const parsed = JSON.parse(saved);
+        return parsed.map(c => ({
+          ...c,
+          viewCharacteristics: {
+            sea: c.viewCharacteristics?.sea || false,
+            panorama: c.viewCharacteristics?.panorama || false,
+            river: c.viewCharacteristics?.river || false,
+            forest: c.viewCharacteristics?.forest || false,
+            railway: c.viewCharacteristics?.railway || false,
+            gsk: c.viewCharacteristics?.gsk || false,
+            industrial: c.viewCharacteristics?.industrial || c.viewCharacteristics?.promzona || false,
+            cemetery: c.viewCharacteristics?.cemetery || false
+          }
+        }));
+      }
+      return initialCompetitors;
     } catch {
       return initialCompetitors;
     }
@@ -2246,7 +2400,24 @@ export default function App() {
   const [plotData, setPlotData] = useState(() => {
     try {
       const saved = localStorage.getItem('landAnalysis_plotData');
-      return saved ? JSON.parse(saved) : defaultPlotData;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Миграция старых данных viewCharacteristics
+        return {
+          ...parsed,
+          viewCharacteristics: {
+            sea: parsed.viewCharacteristics?.sea || false,
+            panorama: parsed.viewCharacteristics?.panorama || false,
+            river: parsed.viewCharacteristics?.river || false,
+            forest: parsed.viewCharacteristics?.forest || false,
+            railway: parsed.viewCharacteristics?.railway || false,
+            gsk: parsed.viewCharacteristics?.gsk || false,
+            industrial: parsed.viewCharacteristics?.industrial || parsed.viewCharacteristics?.promzona || false,
+            cemetery: parsed.viewCharacteristics?.cemetery || false
+          }
+        };
+      }
+      return defaultPlotData;
     } catch {
       return defaultPlotData;
     }
@@ -2280,82 +2451,108 @@ export default function App() {
     try {
       // Альбомная ориентация ('l' = landscape)
       const pdf = new jsPDF('l', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      const pageWidth = pdf.internal.pageSize.getWidth(); // 297mm
+      const pageHeight = pdf.internal.pageSize.getHeight(); // 210mm
+      
+      // Целевое разрешение Full HD
+      const targetWidth = 1920;
+      const targetHeight = 1080;
       
       // Сохраняем текущую вкладку
       const originalTab = activeTab;
       
-      // Экспортируем "Общая информация"
-      setActiveTab('general');
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      if (contentRef.current) {
-        const canvas1 = await html2canvas(contentRef.current, {
-          scale: 1.5,
+      // Функция для захвата вкладки с фиксированным разрешением
+      const captureTab = async (tabId) => {
+        setActiveTab(tabId);
+        await new Promise(resolve => setTimeout(resolve, 400));
+        
+        if (!contentRef.current) return null;
+        
+        // Создаём контейнер с фиксированными размерами Full HD
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: ${targetWidth}px;
+          height: ${targetHeight}px;
+          z-index: -9999;
+          background: #064e3b;
+          overflow: hidden;
+        `;
+        
+        // Клонируем контент
+        const clone = contentRef.current.cloneNode(true);
+        
+        // Вычисляем масштаб чтобы контент вписался в Full HD
+        const contentWidth = contentRef.current.scrollWidth;
+        const contentHeight = contentRef.current.scrollHeight;
+        const scaleX = targetWidth / contentWidth;
+        const scaleY = targetHeight / contentHeight;
+        const scale = Math.min(scaleX, scaleY); // Вписываем с сохранением пропорций
+        
+        clone.style.cssText = `
+          transform: scale(${scale});
+          transform-origin: top left;
+          width: ${contentWidth}px;
+          height: ${contentHeight}px;
+        `;
+        
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+        
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Захватываем с разрешением Full HD
+        const canvas = await html2canvas(wrapper, {
+          scale: 1, // Уже в нужном разрешении
           useCORS: true,
           logging: false,
           backgroundColor: '#064e3b',
-          windowWidth: contentRef.current.scrollWidth,
-          windowHeight: contentRef.current.scrollHeight
+          width: targetWidth,
+          height: targetHeight
         });
         
-        const imgData1 = canvas1.toDataURL('image/jpeg', 0.85);
-        const imgRatio = canvas1.width / canvas1.height;
-        const pageRatio = pageWidth / pageHeight;
+        document.body.removeChild(wrapper);
         
-        let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
+        return canvas;
+      };
+      
+      // Функция размещения изображения на странице с сохранением пропорций
+      const addImageToPage = (imgData, canvasWidth, canvasHeight) => {
+        const imgRatio = canvasWidth / canvasHeight; // 16:9 = 1.777
+        const pageRatio = pageWidth / pageHeight; // A4 = 1.414
         
-        if (imgRatio > pageRatio) {
-          finalWidth = pageWidth;
-          finalHeight = pageWidth / imgRatio;
-          offsetY = (pageHeight - finalHeight) / 2;
-        } else {
-          finalHeight = pageHeight;
-          finalWidth = pageHeight * imgRatio;
-          offsetX = (pageWidth - finalWidth) / 2;
-        }
+        let finalWidth, finalHeight, offsetX, offsetY;
         
+        // Изображение шире (16:9 > 1.414) — подгоняем по ширине
+        finalWidth = pageWidth;
+        finalHeight = pageWidth / imgRatio;
+        offsetX = 0;
+        offsetY = (pageHeight - finalHeight) / 2;
+        
+        // Заливаем фон
         pdf.setFillColor(6, 78, 59);
         pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-        pdf.addImage(imgData1, 'JPEG', offsetX, offsetY, finalWidth, finalHeight);
+        
+        // Добавляем изображение по центру
+        pdf.addImage(imgData, 'JPEG', offsetX, offsetY, finalWidth, finalHeight);
+      };
+      
+      // Экспортируем "Общая информация"
+      const canvas1 = await captureTab('general');
+      if (canvas1) {
+        const imgData1 = canvas1.toDataURL('image/jpeg', 0.92);
+        addImageToPage(imgData1, canvas1.width, canvas1.height);
       }
       
       // Добавляем страницу для "Эластичность спроса"
       pdf.addPage('a4', 'l');
       
-      setActiveTab('elasticity');
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      if (contentRef.current) {
-        const canvas2 = await html2canvas(contentRef.current, {
-          scale: 1.5,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#064e3b',
-          windowWidth: contentRef.current.scrollWidth,
-          windowHeight: contentRef.current.scrollHeight
-        });
-        
-        const imgData2 = canvas2.toDataURL('image/jpeg', 0.85);
-        const imgRatio = canvas2.width / canvas2.height;
-        const pageRatio = pageWidth / pageHeight;
-        
-        let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
-        
-        if (imgRatio > pageRatio) {
-          finalWidth = pageWidth;
-          finalHeight = pageWidth / imgRatio;
-          offsetY = (pageHeight - finalHeight) / 2;
-        } else {
-          finalHeight = pageHeight;
-          finalWidth = pageHeight * imgRatio;
-          offsetX = (pageWidth - finalWidth) / 2;
-        }
-        
-        pdf.setFillColor(6, 78, 59);
-        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-        pdf.addImage(imgData2, 'JPEG', offsetX, offsetY, finalWidth, finalHeight);
+      const canvas2 = await captureTab('elasticity');
+      if (canvas2) {
+        const imgData2 = canvas2.toDataURL('image/jpeg', 0.92);
+        addImageToPage(imgData2, canvas2.width, canvas2.height);
       }
       
       setActiveTab(originalTab);
@@ -2460,9 +2657,31 @@ export default function App() {
 
       // 9. Видовые характеристики
       let viewCorr = 0;
-      if (competitor.viewCharacteristics?.promzona) viewCorr += 10;
-      if (!competitor.viewCharacteristics?.gsk && plotData.viewCharacteristics?.gsk) viewCorr -= 5;
+      const plotView = plotData.viewCharacteristics || {};
+      const compView = competitor.viewCharacteristics || {};
+      
+      VIEW_CHARACTERISTICS_OPTIONS.forEach(opt => {
+        const plotHas = plotView[opt.key] || false;
+        const compHas = compView[opt.key] || false;
+        
+        if (plotHas && !compHas) {
+          viewCorr += opt.correction;
+        } else if (!plotHas && compHas) {
+          viewCorr -= opt.correction;
+        }
+      });
+      // Ограничение корректировки видовых характеристик до ±15%
+      viewCorr = Math.max(-15, Math.min(15, viewCorr));
       price = price * (1 + viewCorr / 100);
+
+      // 10. Характеристики квартир
+      let aptCorr = 0;
+      const aptOrder = ['Стандарт', 'Евро', 'Уникальное'];
+      const plotAptIdx = aptOrder.indexOf(plotData.apartmentType || 'Евро');
+      const compAptIdx = aptOrder.indexOf(competitor.apartmentType || 'Евро');
+      if (compAptIdx > plotAptIdx) aptCorr = (compAptIdx - plotAptIdx) * -10;
+      else if (compAptIdx < plotAptIdx) aptCorr = (plotAptIdx - compAptIdx) * 10;
+      price = price * (1 + aptCorr / 100);
 
       return price;
     };
