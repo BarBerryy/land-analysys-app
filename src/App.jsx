@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, ReferenceLine, ReferenceDot } from 'recharts';
 import { MapPin, Building2, TrendingUp, BarChart3, Users, ChevronDown, Calendar, Plus, X, Check, Home, School, ShoppingBag, Stethoscope, Bus, Upload, FileSpreadsheet, ChevronRight, Table } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -1773,7 +1773,7 @@ const ExcelUploader = ({ onFileSelect, label = "Загрузить Excel" }) => 
 };
 
 // Вкладка эластичности с поддержкой Excel
-const ElasticityTab = ({ data, competitors, competitorsOnly = false }) => {
+const ElasticityTab = ({ data, competitors, competitorsOnly = false, calculatedPrice = 0 }) => {
   const [elasticityTableData, setElasticityTableData] = useState(elasticityData);
   const [excelFile, setExcelFile] = useState(null);
   const [excelData, setExcelData] = useState(null);
@@ -1798,6 +1798,49 @@ const ElasticityTab = ({ data, competitors, competitorsOnly = false }) => {
     }
     return elasticityTableData;
   }, [competitorsOnly, competitors, excelData, elasticityTableData]);
+
+  // Интерполяция для нахождения значения продаж по цене
+  const interpolatedSales = useMemo(() => {
+    if (!calculatedPrice || chartData.length < 2) return null;
+    
+    // Сортируем данные по цене
+    const sortedData = [...chartData].sort((a, b) => a.price - b.price);
+    
+    // Проверяем, находится ли цена в диапазоне данных
+    const minPrice = sortedData[0].price;
+    const maxPrice = sortedData[sortedData.length - 1].price;
+    
+    if (calculatedPrice < minPrice || calculatedPrice > maxPrice) {
+      // Экстраполяция: используем линейную регрессию
+      const n = sortedData.length;
+      const sumX = sortedData.reduce((s, d) => s + d.price, 0);
+      const sumY = sortedData.reduce((s, d) => s + d.sales, 0);
+      const sumXY = sortedData.reduce((s, d) => s + d.price * d.sales, 0);
+      const sumX2 = sortedData.reduce((s, d) => s + d.price * d.price, 0);
+      
+      const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+      const intercept = (sumY - slope * sumX) / n;
+      
+      return Math.max(0, slope * calculatedPrice + intercept);
+    }
+    
+    // Находим два ближайших точки для интерполяции
+    let lower = sortedData[0];
+    let upper = sortedData[sortedData.length - 1];
+    
+    for (let i = 0; i < sortedData.length - 1; i++) {
+      if (sortedData[i].price <= calculatedPrice && sortedData[i + 1].price >= calculatedPrice) {
+        lower = sortedData[i];
+        upper = sortedData[i + 1];
+        break;
+      }
+    }
+    
+    // Линейная интерполяция
+    if (upper.price === lower.price) return lower.sales;
+    const ratio = (calculatedPrice - lower.price) / (upper.price - lower.price);
+    return lower.sales + ratio * (upper.sales - lower.sales);
+  }, [calculatedPrice, chartData]);
 
   const handleDataExtracted = useCallback((data) => {
     setExcelData(data);
@@ -1964,6 +2007,36 @@ const ElasticityTab = ({ data, competitors, competitorsOnly = false }) => {
                       name="Данные"
                     >
                     </Scatter>
+                    {/* Перпендикуляры от расчётной цены */}
+                    {calculatedPrice > 0 && interpolatedSales !== null && (
+                      <>
+                        {/* Вертикальная линия от оси X до точки на графике */}
+                        <ReferenceLine 
+                          x={calculatedPrice} 
+                          stroke="#f59e0b" 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          label={{ value: `${(calculatedPrice/1000).toFixed(0)}k`, position: 'bottom', fill: '#f59e0b', fontSize: 11 }}
+                        />
+                        {/* Горизонтальная линия от точки до оси Y */}
+                        <ReferenceLine 
+                          y={interpolatedSales} 
+                          stroke="#f59e0b" 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          label={{ value: `${interpolatedSales.toFixed(1)}`, position: 'left', fill: '#f59e0b', fontSize: 11 }}
+                        />
+                        {/* Точка пересечения */}
+                        <ReferenceDot 
+                          x={calculatedPrice} 
+                          y={interpolatedSales} 
+                          r={8} 
+                          fill="#f59e0b" 
+                          stroke="#fff"
+                          strokeWidth={2}
+                        />
+                      </>
+                    )}
                   </ScatterChart>
                 ) : (
                   <LineChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -1994,6 +2067,36 @@ const ElasticityTab = ({ data, competitors, competitorsOnly = false }) => {
                       activeDot={{ r: 8, fill: '#34d399' }}
                       name="Объем продаж"
                     />
+                    {/* Перпендикуляры от расчётной цены */}
+                    {calculatedPrice > 0 && interpolatedSales !== null && (
+                      <>
+                        {/* Вертикальная линия от оси X до точки на графике */}
+                        <ReferenceLine 
+                          x={calculatedPrice} 
+                          stroke="#f59e0b" 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          label={{ value: `${(calculatedPrice/1000).toFixed(0)}k`, position: 'top', fill: '#f59e0b', fontSize: 11 }}
+                        />
+                        {/* Горизонтальная линия от точки до оси Y */}
+                        <ReferenceLine 
+                          y={interpolatedSales} 
+                          stroke="#f59e0b" 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          label={{ value: `${interpolatedSales.toFixed(1)}`, position: 'right', fill: '#f59e0b', fontSize: 11 }}
+                        />
+                        {/* Точка пересечения */}
+                        <ReferenceDot 
+                          x={calculatedPrice} 
+                          y={interpolatedSales} 
+                          r={8} 
+                          fill="#f59e0b" 
+                          stroke="#fff"
+                          strokeWidth={2}
+                        />
+                      </>
+                    )}
                   </LineChart>
                 )
               ) : (
@@ -2005,6 +2108,38 @@ const ElasticityTab = ({ data, competitors, competitorsOnly = false }) => {
           </div>
         </div>
       </div>
+
+      {/* Прогноз на основе расчётной цены */}
+      {calculatedPrice > 0 && interpolatedSales !== null && (
+        <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 rounded-xl p-4 border border-amber-700">
+          <h3 className="text-amber-100 font-semibold mb-3 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-amber-400" />
+            Прогноз продаж по расчётной цене
+          </h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-amber-800/30 rounded-lg p-4">
+              <div className="text-amber-400 text-xs mb-1">Расчётная цена (из корректировок)</div>
+              <div className="text-white text-2xl font-bold font-mono">{calculatedPrice.toLocaleString()} <span className="text-sm text-amber-400">₽/м²</span></div>
+            </div>
+            <div className="bg-amber-800/30 rounded-lg p-4">
+              <div className="text-amber-400 text-xs mb-1">Прогнозируемые продажи</div>
+              <div className="text-white text-2xl font-bold font-mono">{interpolatedSales.toFixed(1)} <span className="text-sm text-amber-400">кв/мес</span></div>
+            </div>
+            <div className="bg-amber-800/30 rounded-lg p-4">
+              <div className="text-amber-400 text-xs mb-1">Оценка спроса</div>
+              <div className={`text-2xl font-bold ${
+                interpolatedSales >= 10 ? 'text-green-400' : 
+                interpolatedSales >= 6 ? 'text-emerald-400' : 
+                interpolatedSales >= 3 ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {interpolatedSales >= 10 ? 'Высокий' : 
+                 interpolatedSales >= 6 ? 'Стабильный' : 
+                 interpolatedSales >= 3 ? 'Умеренный' : 'Низкий'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Статистика */}
       {chartData.length > 0 && (
@@ -2142,6 +2277,106 @@ export default function App() {
     }
   };
 
+  // Вычисление итоговой цены из корректировок (реализация)
+  const calculatedPrice = useMemo(() => {
+    const selectedCompetitors = competitors.filter(c => c.selected);
+    if (selectedCompetitors.length === 0) return 0;
+
+    // Функция расчёта корректировок (дублирует логику из CorrectionsTab)
+    const calculateCorrections = (competitor) => {
+      let price = competitor.priceRealization;
+
+      // 1. Готовность объекта
+      if (competitor.readiness > 0) {
+        const readinessFactor = (competitor.readiness / 100) * 0.1;
+        price = price / (1 + readinessFactor);
+      }
+
+      // 2. Расстояние до остановки
+      const distanceCorr = ((competitor.distanceToStop || 0) - (plotData.distanceToStop || 0)) / 200;
+      price = price * (1 + distanceCorr / 100);
+
+      // 3. Транспортная доступность
+      const plotTransport = (plotData.transport?.busTrolley || 0) + (plotData.transport?.tram || 0) + (plotData.transport?.metro ? 2 : 0);
+      const compTransport = (competitor.transport?.buses || 0) + (competitor.transport?.trolleys || 0) + (competitor.transport?.trams || 0) + (competitor.transport?.metro ? 2 : 0);
+      let transportCorr = 0;
+      if (compTransport > plotTransport + 2) transportCorr = -3;
+      else if (plotTransport > compTransport + 2) transportCorr = 3;
+      price = price * (1 + transportCorr / 100);
+
+      // 4. Социальная инфраструктура
+      let infraCorr = 0;
+      const plotSchools = plotData.socialInfra?.schools || 0;
+      const plotKindergartens = plotData.socialInfra?.kindergartens || 0;
+      const plotMalls = plotData.socialInfra?.malls || false;
+      const plotClinics = plotData.socialInfra?.clinics || false;
+      if (competitor.infrastructure.schools > plotSchools) infraCorr -= 2;
+      else if (competitor.infrastructure.schools < plotSchools) infraCorr += 2;
+      if (competitor.infrastructure.kindergartens > plotKindergartens) infraCorr -= 2;
+      else if (competitor.infrastructure.kindergartens < plotKindergartens) infraCorr += 2;
+      if (competitor.infrastructure.malls > 0 && !plotMalls) infraCorr -= 1;
+      else if (competitor.infrastructure.malls === 0 && plotMalls) infraCorr += 1;
+      if (competitor.infrastructure.clinics > 0 && !plotClinics) infraCorr -= 1;
+      else if (competitor.infrastructure.clinics === 0 && plotClinics) infraCorr += 1;
+      price = price * (1 + infraCorr / 100);
+
+      // 5. Материал стен
+      let wallCorr = 0;
+      const plotWall = plotData.wallMaterial || 'Монолит-кирпич';
+      const compWall = competitor.wallMaterial;
+      if (plotWall === 'Панель' && (compWall === 'Монолит-кирпич' || compWall === 'Кирпич')) wallCorr = -10;
+      else if ((plotWall === 'Монолит-кирпич' || plotWall === 'Кирпич') && compWall === 'Панель') wallCorr = 10;
+      price = price * (1 + wallCorr / 100);
+
+      // 6. Репутация застройщика
+      let repCorr = 0;
+      const plotRep = plotData.reputation || '-';
+      const compRep = competitor.reputation;
+      if (plotRep === '-' && compRep === '+') repCorr = -5;
+      else if (plotRep === '+' && compRep === '-') repCorr = 5;
+      price = price * (1 + repCorr / 100);
+
+      // 7. Отделка
+      let finishCorr = 0;
+      const finishingOrder = ['Черновая', 'Предчистовая', 'Чистовая'];
+      const plotFinishIdx = finishingOrder.indexOf(plotData.finishing || 'Предчистовая');
+      const compFinishIdx = finishingOrder.indexOf(competitor.finishing);
+      if (compFinishIdx > plotFinishIdx) finishCorr = (compFinishIdx - plotFinishIdx) * -13;
+      else if (compFinishIdx < plotFinishIdx) finishCorr = (plotFinishIdx - compFinishIdx) * 13;
+      price = price * (1 + finishCorr / 100);
+
+      // 8. Класс жилья
+      let classCorr = 0;
+      const classOrder = ['Стандарт', 'Комфорт', 'Комфорт+', 'Бизнес', 'Элит'];
+      const plotClassIdx = classOrder.indexOf(plotData.housingClass || 'Комфорт');
+      const compClassIdx = classOrder.indexOf(competitor.housingClass);
+      if (compClassIdx > plotClassIdx) classCorr = (compClassIdx - plotClassIdx) * -5;
+      else if (compClassIdx < plotClassIdx) classCorr = (plotClassIdx - compClassIdx) * 5;
+      price = price * (1 + classCorr / 100);
+
+      // 9. Видовые характеристики
+      let viewCorr = 0;
+      if (competitor.viewCharacteristics?.promzona) viewCorr += 10;
+      if (!competitor.viewCharacteristics?.gsk && plotData.viewCharacteristics?.gsk) viewCorr -= 5;
+      price = price * (1 + viewCorr / 100);
+
+      return price;
+    };
+
+    // Расчёт весов и итоговой цены
+    const savedWeights = plotData.competitorWeights || {};
+    const manualWeights = selectedCompetitors.map((c, idx) => savedWeights[c.id] ?? (idx + 1));
+    const totalWeightSum = manualWeights.reduce((a, b) => a + b, 0);
+    const normalizedWeights = manualWeights.map(w => totalWeightSum > 0 ? w / totalWeightSum : 1 / manualWeights.length);
+
+    const weightedPrice = selectedCompetitors.reduce((sum, c, idx) => {
+      const finalPrice = calculateCorrections(c);
+      return sum + finalPrice * normalizedWeights[idx];
+    }, 0);
+
+    return Math.round(weightedPrice);
+  }, [competitors, plotData]);
+
   const tabs = [
     { id: 'general', icon: MapPin, label: 'Общая информация' },
     { id: 'corrections-real', icon: TrendingUp, label: 'Корректировки (Реализ.)' },
@@ -2229,6 +2464,7 @@ export default function App() {
             data={plotData}
             competitors={competitors}
             competitorsOnly={false}
+            calculatedPrice={calculatedPrice}
           />
         )}
         {activeTab === 'elasticity-comp' && (
@@ -2236,6 +2472,7 @@ export default function App() {
             data={plotData}
             competitors={competitors}
             competitorsOnly={true}
+            calculatedPrice={calculatedPrice}
           />
         )}
       </main>
