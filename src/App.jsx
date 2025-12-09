@@ -2188,9 +2188,8 @@ export default function App() {
             <X className="w-3 h-3" />
             Сбросить данные
           </button>
-          <div className="text-emerald-500 text-xs">Версия 1.1</div>
-          <div className="text-emerald-400 text-xs">© 2024 Аналитика ЗУ</div>
-          <div className="text-emerald-600 text-xs">Данные сохраняются автоматически</div>
+          <div className="text-emerald-500 text-xs">Версия 1.02</div>
+          <div className="text-emerald-400 text-xs">© 2024-2026 Аналитика ЗУ</div>
         </div>
       </nav>
 
