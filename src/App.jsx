@@ -138,7 +138,7 @@ const Dropdown = ({ label, value, options, onChange, className = '' }) => {
         <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-emerald-900 border border-emerald-700 rounded-lg shadow-xl overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-emerald-900 border border-emerald-700 rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
           {options.map((option) => (
             <button
               key={option}
