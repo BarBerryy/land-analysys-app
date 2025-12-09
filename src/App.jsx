@@ -425,9 +425,6 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
                 <span className="text-emerald-300 text-xs">Поликлиники</span>
               </div>
             </div>
-            <div className="mt-3 text-xs text-emerald-500 italic">
-              * Редактируется в разделе "Корректировки (Реализ.)"
-            </div>
           </div>
 
           {/* Транспорт */}
@@ -454,9 +451,6 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
                   {data.transport?.metro ? '+' : '-'}
                 </span>
               </div>
-            </div>
-            <div className="mt-3 text-xs text-emerald-500 italic">
-              * Редактируется в разделе "Корректировки (Реализ.)"
             </div>
           </div>
         </div>
@@ -777,9 +771,18 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
     const corrections = [];
 
     // 1. Готовность объекта (наш объект всегда 0%)
-    const readinessCorr = (competitor.readiness * 0.15 / 50);
-    const priceAfterReadiness = price * (1 - readinessCorr);
-    corrections.push({ name: 'Готовность объекта', value: -readinessCorr * 100, price: priceAfterReadiness });
+    // Если готовность конкурента = 0%, цена не меняется
+    // Иначе: Цена скорр. = Цена / (1 + Готовность * 10%)
+    let priceAfterReadiness = price;
+    let readinessCorr = 0;
+    
+    if (competitor.readiness > 0) {
+      const readinessFactor = (competitor.readiness / 100) * 0.1; // Готовность * 10%
+      priceAfterReadiness = price / (1 + readinessFactor);
+      readinessCorr = ((priceAfterReadiness - price) / price) * 100; // Корректировка в %
+    }
+    
+    corrections.push({ name: 'Готовность объекта', value: readinessCorr, price: priceAfterReadiness });
 
     // 2. Расстояние до остановки
     // Корректировка = (Расстояние конкурента - Расстояние нашего участка) / 200, в %
