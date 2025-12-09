@@ -1,7 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, ReferenceLine, ReferenceDot } from 'recharts';
-import { MapPin, Building2, TrendingUp, BarChart3, Users, ChevronDown, Calendar, Plus, X, Check, Home, School, ShoppingBag, Stethoscope, Bus, Upload, FileSpreadsheet, ChevronRight, Table } from 'lucide-react';
+import { MapPin, Building2, TrendingUp, BarChart3, Users, ChevronDown, Calendar, Plus, X, Check, Home, School, ShoppingBag, Stethoscope, Bus, Upload, FileSpreadsheet, ChevronRight, Table, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 // Данные конкурентов из примера
 const initialCompetitors = [
@@ -132,7 +134,7 @@ const Dropdown = ({ label, value, options, onChange, className = '' }) => {
       <label className="block text-xs text-emerald-200 mb-1 font-medium">{label}</label>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 bg-emerald-900/50 border border-emerald-700 rounded-lg text-white text-left flex items-center justify-between hover:border-emerald-500 transition-colors"
+        className="w-full px-3 py-2.5 bg-emerald-900/50 border border-emerald-700 rounded-lg text-white text-left flex items-center justify-between hover:border-emerald-500 transition-colors text-sm"
       >
         <span>{value || 'Выберите...'}</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -143,7 +145,7 @@ const Dropdown = ({ label, value, options, onChange, className = '' }) => {
             <button
               key={option}
               onClick={() => { onChange(option); setIsOpen(false); }}
-              className={`w-full px-3 py-2 text-left hover:bg-emerald-800 transition-colors ${value === option ? 'bg-emerald-700 text-white' : 'text-emerald-100'}`}
+              className={`w-full px-3 py-2 text-left hover:bg-emerald-800 transition-colors text-sm ${value === option ? 'bg-emerald-700 text-white' : 'text-emerald-100'}`}
             >
               {option}
             </button>
@@ -164,7 +166,7 @@ const InputField = ({ label, value, onChange, type = 'text', suffix = '', placeh
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 bg-emerald-900/50 border border-emerald-700 rounded-lg text-white placeholder-emerald-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-colors"
+        className="w-full px-3 py-2.5 bg-emerald-900/50 border border-emerald-700 rounded-lg text-white placeholder-emerald-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-colors text-sm"
       />
       {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400 text-sm">{suffix}</span>}
     </div>
@@ -222,7 +224,7 @@ const PriceInput = ({ value, onChange }) => {
       onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      className="w-28 px-2 py-1 bg-emerald-900/50 border border-emerald-700 rounded text-white text-right font-mono focus:outline-none focus:border-emerald-500"
+      className="w-28 px-2 py-1.5 bg-emerald-900/50 border border-emerald-700 rounded text-white text-right font-mono text-sm focus:outline-none focus:border-emerald-500"
     />
   );
 };
@@ -400,25 +402,25 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
               <Building2 className="w-4 h-4" /> Социальная инфраструктура (1 км)
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
-                <School className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2.5 border border-emerald-800">
+                <School className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span className="text-white font-semibold">{data.socialInfra?.schools || 0}</span>
                 <span className="text-emerald-300 text-xs">Школ/Гимн./Лицеев</span>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
-                <Home className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2.5 border border-emerald-800">
+                <Home className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span className="text-white font-semibold">{data.socialInfra?.kindergartens || 0}</span>
                 <span className="text-emerald-300 text-xs">Детских садов</span>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
-                <ShoppingBag className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2.5 border border-emerald-800">
+                <ShoppingBag className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span className={`font-semibold ${data.socialInfra?.malls ? 'text-green-400' : 'text-red-400'}`}>
                   {data.socialInfra?.malls ? '+' : '-'}
                 </span>
                 <span className="text-emerald-300 text-xs">Торговые центры</span>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
-                <Stethoscope className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 bg-emerald-950/50 rounded-lg p-2.5 border border-emerald-800">
+                <Stethoscope className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span className={`font-semibold ${data.socialInfra?.clinics ? 'text-green-400' : 'text-red-400'}`}>
                   {data.socialInfra?.clinics ? '+' : '-'}
                 </span>
@@ -433,19 +435,19 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
               <Bus className="w-4 h-4" /> Транспортная доступность
             </h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
+              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2.5 border border-emerald-800">
                 <span className="text-emerald-300 text-sm">Расстояние до остановки</span>
                 <span className="text-white font-semibold">{data.distanceToStop || 0} м</span>
               </div>
-              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
+              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2.5 border border-emerald-800">
                 <span className="text-emerald-300 text-sm">Автобусы/Троллейбусы</span>
                 <span className="text-white font-semibold">{data.transport?.busTrolley || 0}</span>
               </div>
-              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
+              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2.5 border border-emerald-800">
                 <span className="text-emerald-300 text-sm">Трамваи</span>
                 <span className="text-white font-semibold">{data.transport?.tram || 0}</span>
               </div>
-              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2 border border-emerald-800">
+              <div className="flex items-center justify-between bg-emerald-950/50 rounded-lg p-2.5 border border-emerald-800">
                 <span className="text-emerald-300 text-sm">Станции метро</span>
                 <span className={`font-semibold ${data.transport?.metro ? 'text-green-400' : 'text-red-400'}`}>
                   {data.transport?.metro ? '+' : '-'}
@@ -465,19 +467,19 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
               {/* Нередактируемые поля - подтягиваются с корректировок */}
               <div>
                 <label className="block text-xs text-emerald-200 mb-1 font-medium">Класс жилья</label>
-                <div className="w-full px-3 py-2 bg-emerald-950/50 border border-emerald-800 rounded-lg text-emerald-300">
+                <div className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-800 rounded-lg text-emerald-300 text-sm">
                   {data.housingClass || 'Не задан'}
                 </div>
               </div>
               <div>
                 <label className="block text-xs text-emerald-200 mb-1 font-medium">Вид отделки</label>
-                <div className="w-full px-3 py-2 bg-emerald-950/50 border border-emerald-800 rounded-lg text-emerald-300">
+                <div className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-800 rounded-lg text-emerald-300 text-sm">
                   {data.finishing || 'Не задана'}
                 </div>
               </div>
               <div>
                 <label className="block text-xs text-emerald-200 mb-1 font-medium">Материал стен</label>
-                <div className="w-full px-3 py-2 bg-emerald-950/50 border border-emerald-800 rounded-lg text-emerald-300">
+                <div className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-800 rounded-lg text-emerald-300 text-sm">
                   {data.wallMaterial || 'Не задан'}
                 </div>
               </div>
@@ -538,7 +540,7 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
                       type="number"
                       value={data.apartmentMix?.[item.key] || 0}
                       onChange={(e) => setData({...data, apartmentMix: {...data.apartmentMix, [item.key]: parseInt(e.target.value) || 0}})}
-                      className={`w-14 px-2 py-1 bg-emerald-900/50 border rounded text-white text-center focus:outline-none ${
+                      className={`w-14 px-2 py-1 bg-emerald-900/50 border rounded text-white text-center text-sm focus:outline-none ${
                         isInvalid ? 'border-red-500 focus:border-red-400' : 'border-emerald-700 focus:border-emerald-500'
                       }`}
                     />
@@ -2267,6 +2269,108 @@ export default function App() {
     }
   }, [plotData]);
 
+  // Реф для контейнера контента и состояние экспорта
+  const contentRef = useRef(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Функция экспорта в PDF
+  const exportToPDF = async () => {
+    setIsExporting(true);
+    
+    try {
+      // Альбомная ориентация ('l' = landscape)
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Сохраняем текущую вкладку
+      const originalTab = activeTab;
+      
+      // Экспортируем "Общая информация"
+      setActiveTab('general');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (contentRef.current) {
+        const canvas1 = await html2canvas(contentRef.current, {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#064e3b',
+          windowWidth: contentRef.current.scrollWidth,
+          windowHeight: contentRef.current.scrollHeight
+        });
+        
+        const imgData1 = canvas1.toDataURL('image/jpeg', 0.85);
+        const imgRatio = canvas1.width / canvas1.height;
+        const pageRatio = pageWidth / pageHeight;
+        
+        let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
+        
+        if (imgRatio > pageRatio) {
+          finalWidth = pageWidth;
+          finalHeight = pageWidth / imgRatio;
+          offsetY = (pageHeight - finalHeight) / 2;
+        } else {
+          finalHeight = pageHeight;
+          finalWidth = pageHeight * imgRatio;
+          offsetX = (pageWidth - finalWidth) / 2;
+        }
+        
+        pdf.setFillColor(6, 78, 59);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+        pdf.addImage(imgData1, 'JPEG', offsetX, offsetY, finalWidth, finalHeight);
+      }
+      
+      // Добавляем страницу для "Эластичность спроса"
+      pdf.addPage('a4', 'l');
+      
+      setActiveTab('elasticity');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (contentRef.current) {
+        const canvas2 = await html2canvas(contentRef.current, {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#064e3b',
+          windowWidth: contentRef.current.scrollWidth,
+          windowHeight: contentRef.current.scrollHeight
+        });
+        
+        const imgData2 = canvas2.toDataURL('image/jpeg', 0.85);
+        const imgRatio = canvas2.width / canvas2.height;
+        const pageRatio = pageWidth / pageHeight;
+        
+        let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
+        
+        if (imgRatio > pageRatio) {
+          finalWidth = pageWidth;
+          finalHeight = pageWidth / imgRatio;
+          offsetY = (pageHeight - finalHeight) / 2;
+        } else {
+          finalHeight = pageHeight;
+          finalWidth = pageHeight * imgRatio;
+          offsetX = (pageWidth - finalWidth) / 2;
+        }
+        
+        pdf.setFillColor(6, 78, 59);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+        pdf.addImage(imgData2, 'JPEG', offsetX, offsetY, finalWidth, finalHeight);
+      }
+      
+      setActiveTab(originalTab);
+      
+      const fileName = `Анализ_${plotData.plotName || 'участка'}_${new Date().toLocaleDateString('ru-RU').replace(/\./g, '-')}.pdf`;
+      pdf.save(fileName);
+      
+    } catch (error) {
+      console.error('Ошибка экспорта PDF:', error);
+      alert('Произошла ошибка при экспорте в PDF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Функция сброса данных к начальным значениям
   const resetToDefaults = () => {
     if (window.confirm('Вы уверены, что хотите сбросить все данные к начальным значениям?')) {
@@ -2420,6 +2524,23 @@ export default function App() {
 
         <div className="p-4 border-t border-emerald-800 space-y-3">
           <button
+            onClick={exportToPDF}
+            disabled={isExporting}
+            className="w-full px-3 py-2 text-xs bg-emerald-700 hover:bg-emerald-600 border border-emerald-600 rounded-lg text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-wait"
+          >
+            {isExporting ? (
+              <>
+                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Экспорт...
+              </>
+            ) : (
+              <>
+                <Download className="w-3 h-3" />
+                Экспорт в PDF
+              </>
+            )}
+          </button>
+          <button
             onClick={resetToDefaults}
             className="w-full px-3 py-2 text-xs bg-emerald-900/50 hover:bg-red-900/50 border border-emerald-700 hover:border-red-600 rounded-lg text-emerald-400 hover:text-red-400 transition-colors flex items-center justify-center gap-2"
           >
@@ -2432,7 +2553,7 @@ export default function App() {
       </nav>
 
       {/* Основной контент */}
-      <main className="flex-1 p-6 overflow-auto">
+      <main ref={contentRef} className="flex-1 p-6 overflow-auto">
         {activeTab === 'general' && (
           <GeneralInfoTab 
             data={plotData} 

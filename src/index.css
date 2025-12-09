@@ -32,3 +32,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 0.8;
 }
+
+/* Фикс для вертикального центрирования в html2canvas */
+input[type="text"],
+input[type="number"] {
+  vertical-align: middle;
+  box-sizing: border-box;
+}
