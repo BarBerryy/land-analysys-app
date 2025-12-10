@@ -354,13 +354,29 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-white">Справка по земельному участку</h2>
           </div>
-          <div className="mt-2">
+          <div className="mt-2 flex items-center gap-4">
+            <select
+              value={data.city || 'Пермь'}
+              onChange={(e) => setData({...data, city: e.target.value})}
+              className="bg-transparent text-emerald-400 text-lg font-medium border-b border-emerald-700 focus:border-emerald-400 focus:outline-none py-1 cursor-pointer"
+            >
+              <option value="Екатеринбург" className="bg-emerald-900">Екатеринбург</option>
+              <option value="Казань" className="bg-emerald-900">Казань</option>
+              <option value="Махачкала" className="bg-emerald-900">Махачкала</option>
+              <option value="Нижний Новгород" className="bg-emerald-900">Нижний Новогород</option>
+              <option value="Новосибирск" className="bg-emerald-900">Новосибирск</option>
+              <option value="Пермь" className="bg-emerald-900">Пермь</option>
+              <option value="Самара" className="bg-emerald-900">Самара</option>
+              <option value="Санкт-Петербург" className="bg-emerald-900">Санкт-Петербург</option>
+              <option value="Тольятти" className="bg-emerald-900">Тольятти</option>
+              <option value="Уфа" className="bg-emerald-900">Уфа</option>
+            </select>
             <input
               type="text"
               value={data.plotName || ''}
               onChange={(e) => setData({...data, plotName: e.target.value})}
-              placeholder="Название участка (например: Энергетиков)"
-              className="bg-transparent text-emerald-400 text-lg font-medium border-b border-emerald-700 focus:border-emerald-400 focus:outline-none w-80 py-1 placeholder-emerald-600"
+              placeholder="Название участка"
+              className="bg-transparent text-emerald-400 text-lg font-medium border-b border-emerald-700 focus:border-emerald-400 focus:outline-none w-48 py-1 placeholder-emerald-600"
             />
           </div>
         </div>
@@ -2499,6 +2515,7 @@ export default function App() {
   // Начальные данные участка
   const defaultPlotData = {
     plotName: 'Энергетиков',
+    city: 'Пермь',
     executionDate: new Date().toISOString(),
     area: '3.63',
     cadastralNumber: '59:01:4413798:316; 59:01:4413798:329',
