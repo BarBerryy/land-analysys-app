@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, ReferenceLine, ReferenceDot } from 'recharts';
 import { MapPin, Building2, TrendingUp, BarChart3, Users, ChevronDown, Calendar, Plus, X, Check, Home, School, ShoppingBag, Stethoscope, Bus, Upload, FileSpreadsheet, ChevronRight, Table, Download, Car } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -126,11 +126,29 @@ const elasticityData = [
 ];
 
 // Компонент выпадающего списка
+// Хук для закрытия при клике вне элемента
+const useClickOutside = (ref, handler) => {
+  useEffect(() => {
+    const listener = (event) => {
+      if (!ref.current || ref.current.contains(event.target)) return;
+      handler();
+    };
+    document.addEventListener('mousedown', listener);
+    document.addEventListener('touchstart', listener);
+    return () => {
+      document.removeEventListener('mousedown', listener);
+      document.removeEventListener('touchstart', listener);
+    };
+  }, [ref, handler]);
+};
+
 const Dropdown = ({ label, value, options, onChange, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+  useClickOutside(ref, () => setIsOpen(false));
   
   return (
-    <div className={`relative ${className}`}>
+    <div ref={ref} className={`relative ${className}`}>
       <label className="block text-xs text-emerald-200 mb-1 font-medium">{label}</label>
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -726,13 +744,15 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
 // Inline dropdown для таблицы (вынесен для предотвращения потери фокуса)
 const InlineDropdown = ({ value, options, onChange, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+  useClickOutside(ref, () => setIsOpen(false));
   
   if (disabled) {
     return <span className="text-emerald-300">{value}</span>;
   }
   
   return (
-    <div className="relative inline-block">
+    <div ref={ref} className="relative inline-block">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 text-white hover:text-emerald-300 transition-colors"
@@ -800,6 +820,8 @@ const PARKING_OPTIONS = [
 // Компонент мультиселекта для типов паркинга
 const ParkingSelect = ({ value = {}, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+  useClickOutside(ref, () => setIsOpen(false));
   
   const selectedLabels = PARKING_OPTIONS
     .filter(opt => value[opt.key])
@@ -812,7 +834,7 @@ const ParkingSelect = ({ value = {}, onChange }) => {
   };
   
   return (
-    <div className="relative">
+    <div ref={ref} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-700 rounded-lg text-white text-sm text-left hover:border-emerald-500 transition-colors flex items-center justify-between gap-2"
@@ -836,14 +858,6 @@ const ParkingSelect = ({ value = {}, onChange }) => {
               <span className="text-emerald-100">{opt.label}</span>
             </button>
           ))}
-          <div className="border-t border-emerald-700 p-2">
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-full py-1 text-xs text-emerald-400 hover:text-emerald-300"
-            >
-              Закрыть
-            </button>
-          </div>
         </div>
       )}
     </div>
@@ -865,6 +879,8 @@ const VIEW_CHARACTERISTICS_OPTIONS = [
 // Компонент мультиселекта для видовых характеристик
 const ViewCharacteristicsSelect = ({ value = {}, onChange, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+  useClickOutside(ref, () => setIsOpen(false));
   
   // Получаем список выбранных характеристик
   const selectedLabels = VIEW_CHARACTERISTICS_OPTIONS
@@ -887,7 +903,7 @@ const ViewCharacteristicsSelect = ({ value = {}, onChange, disabled = false }) =
   }
   
   return (
-    <div className="relative">
+    <div ref={ref} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="min-w-[140px] max-w-[200px] px-2 py-1 bg-emerald-900/50 border border-emerald-700 rounded text-white text-xs text-left hover:border-emerald-500 transition-colors flex items-center justify-between gap-1"
@@ -916,14 +932,6 @@ const ViewCharacteristicsSelect = ({ value = {}, onChange, disabled = false }) =
               </span>
             </button>
           ))}
-          <div className="border-t border-emerald-700 p-2">
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-full py-1 text-xs text-emerald-400 hover:text-emerald-300"
-            >
-              Закрыть
-            </button>
-          </div>
         </div>
       )}
     </div>
