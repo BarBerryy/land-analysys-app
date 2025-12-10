@@ -363,13 +363,9 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
               <option value="Екатеринбург" className="bg-emerald-900">Екатеринбург</option>
               <option value="Казань" className="bg-emerald-900">Казань</option>
               <option value="Махачкала" className="bg-emerald-900">Махачкала</option>
-              <option value="Нижний Новгород" className="bg-emerald-900">Нижний Новогород</option>
-              <option value="Новосибирск" className="bg-emerald-900">Новосибирск</option>
               <option value="Пермь" className="bg-emerald-900">Пермь</option>
-              <option value="Самара" className="bg-emerald-900">Самара</option>
               <option value="Санкт-Петербург" className="bg-emerald-900">Санкт-Петербург</option>
               <option value="Тольятти" className="bg-emerald-900">Тольятти</option>
-              <option value="Уфа" className="bg-emerald-900">Уфа</option>
             </select>
             <input
               type="text"
@@ -522,24 +518,43 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
               <Car className="w-4 h-4" /> Паркинг
             </h3>
             <div className="space-y-3">
-              <Dropdown 
-                label="Тип паркинга" 
-                value={data.parkingType || 'Подземный'} 
-                options={['Подземный', 'Многоуровневый', 'Плоскостной']} 
-                onChange={(v) => setData({...data, parkingType: v})} 
-              />
               <div>
-                <label className="block text-xs text-emerald-200 mb-1 font-medium">Стоимость паркинга (млн ₽)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={data.parkingCost || ''}
-                  onChange={(e) => setData({...data, parkingCost: parseFloat(e.target.value) || 0})}
-                  placeholder="1.5"
-                  className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-700 rounded-lg text-white text-sm placeholder-emerald-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                <label className="block text-xs text-emerald-200 mb-1 font-medium">Тип паркинга</label>
+                <ParkingSelect
+                  value={data.parkingTypes || {}}
+                  onChange={(v) => setData({...data, parkingTypes: v})}
                 />
               </div>
+              
+              {/* Поля стоимости в зависимости от выбранных типов */}
+              {data.parkingTypes?.underground && (
+                <div>
+                  <label className="block text-xs text-emerald-200 mb-1 font-medium">Стоимость подземного паркинга (млн ₽)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={data.parkingCostUnderground || ''}
+                    onChange={(e) => setData({...data, parkingCostUnderground: parseFloat(e.target.value) || 0})}
+                    placeholder="1.5"
+                    className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-700 rounded-lg text-white text-sm placeholder-emerald-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                  />
+                </div>
+              )}
+              {data.parkingTypes?.multilevel && (
+                <div>
+                  <label className="block text-xs text-emerald-200 mb-1 font-medium">Стоимость многоуровневого паркинга (млн ₽)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={data.parkingCostMultilevel || ''}
+                    onChange={(e) => setData({...data, parkingCostMultilevel: parseFloat(e.target.value) || 0})}
+                    placeholder="1.0"
+                    className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-700 rounded-lg text-white text-sm placeholder-emerald-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -772,6 +787,66 @@ const InlineToggle = ({ value, onChange, disabled = false }) => {
     >
       {value ? '+' : '-'}
     </button>
+  );
+};
+
+// Константы для типов паркинга
+const PARKING_OPTIONS = [
+  { key: 'underground', label: 'Подземный' },
+  { key: 'multilevel', label: 'Многоуровневый' },
+  { key: 'surface', label: 'Плоскостной' }
+];
+
+// Компонент мультиселекта для типов паркинга
+const ParkingSelect = ({ value = {}, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const selectedLabels = PARKING_OPTIONS
+    .filter(opt => value[opt.key])
+    .map(opt => opt.label);
+  
+  const displayText = selectedLabels.length > 0 ? selectedLabels.join(', ') : 'Выберите тип';
+  
+  const handleToggle = (key) => {
+    onChange({ ...value, [key]: !value[key] });
+  };
+  
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-700 rounded-lg text-white text-sm text-left hover:border-emerald-500 transition-colors flex items-center justify-between gap-2"
+      >
+        <span className="truncate flex-1">{displayText}</span>
+        <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-emerald-900 border border-emerald-700 rounded-lg shadow-xl overflow-hidden">
+          {PARKING_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => handleToggle(opt.key)}
+              className="w-full px-3 py-2.5 text-left hover:bg-emerald-800 transition-colors text-sm flex items-center gap-2"
+            >
+              <span className={`w-4 h-4 rounded border flex items-center justify-center ${
+                value[opt.key] ? 'bg-emerald-500 border-emerald-500' : 'border-emerald-600'
+              }`}>
+                {value[opt.key] && <Check className="w-3 h-3 text-white" />}
+              </span>
+              <span className="text-emerald-100">{opt.label}</span>
+            </button>
+          ))}
+          <div className="border-t border-emerald-700 p-2">
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-full py-1 text-xs text-emerald-400 hover:text-emerald-300"
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -2528,8 +2603,9 @@ export default function App() {
     floors: '12 - 15',
     productAnalog: 'Беседа',
     apartmentType: 'Евро',
-    parkingType: 'Подземный',
-    parkingCost: 1.5,
+    parkingTypes: { underground: true, multilevel: false, surface: false },
+    parkingCostUnderground: 1.5,
+    parkingCostMultilevel: null,
     distanceToStop: 250,
     transport: { busTrolley: 1, tram: 0, metro: false },
     socialInfra: { schools: 0, kindergartens: 0, malls: false, clinics: false },
