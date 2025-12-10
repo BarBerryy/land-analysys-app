@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, ReferenceLine, ReferenceDot } from 'recharts';
-import { MapPin, Building2, TrendingUp, BarChart3, Users, ChevronDown, Calendar, Plus, X, Check, Home, School, ShoppingBag, Stethoscope, Bus, Upload, FileSpreadsheet, ChevronRight, Table, Download } from 'lucide-react';
+import { MapPin, Building2, TrendingUp, BarChart3, Users, ChevronDown, Calendar, Plus, X, Check, Home, School, ShoppingBag, Stethoscope, Bus, Upload, FileSpreadsheet, ChevronRight, Table, Download, Car } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -497,6 +497,33 @@ const GeneralInfoTab = ({ data, setData, competitors, setCompetitors }) => {
                 ]} 
                 onChange={(v) => setData({...data, productAnalog: v})} 
               />
+            </div>
+          </div>
+
+          {/* Паркинг */}
+          <div className="bg-emerald-900/30 rounded-xl p-4 border border-emerald-800">
+            <h3 className="text-emerald-100 font-semibold mb-4 flex items-center gap-2">
+              <Car className="w-4 h-4" /> Паркинг
+            </h3>
+            <div className="space-y-3">
+              <Dropdown 
+                label="Тип паркинга" 
+                value={data.parkingType || 'Подземный'} 
+                options={['Подземный', 'Многоуровневый', 'Плоскостной']} 
+                onChange={(v) => setData({...data, parkingType: v})} 
+              />
+              <div>
+                <label className="block text-xs text-emerald-200 mb-1 font-medium">Стоимость паркинга (млн ₽)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={data.parkingCost || ''}
+                  onChange={(e) => setData({...data, parkingCost: parseFloat(e.target.value) || 0})}
+                  placeholder="1.5"
+                  className="w-full px-3 py-2.5 bg-emerald-950/50 border border-emerald-700 rounded-lg text-white text-sm placeholder-emerald-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
             </div>
           </div>
 
@@ -999,7 +1026,31 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
   const totalWeightSum = manualWeights.reduce((a, b) => a + b, 0);
   const normalizedWeights = manualWeights.map(w => totalWeightSum > 0 ? w / totalWeightSum : 1 / manualWeights.length);
 
-  const weightedPrice = correctionResults.reduce((sum, r, idx) => sum + r.finalPrice * normalizedWeights[idx], 0);
+  // Базовая взвешенная цена
+  const baseWeightedPrice = correctionResults.reduce((sum, r, idx) => sum + r.finalPrice * normalizedWeights[idx], 0);
+
+  // Расчёт корректировки от факторов
+  const getFactorsCorrection = () => {
+    const factors = plotData.marketFactors || {};
+    let correction = 0;
+    
+    // Конкуренция по ассортименту
+    if (factors.competition === 'Низкая') correction += 5;
+    else if (factors.competition === 'Высокая') correction -= 5;
+    
+    // Коммерческая стратегия
+    if (factors.strategy === 'Продать быстро') correction -= 3;
+    else if (factors.strategy === 'Продать дорого') correction += 3;
+    
+    // Рынок продаж и роста
+    if (factors.marketGrowth === 'Да') correction += 3;
+    else if (factors.marketGrowth === 'Нет') correction -= 3;
+    
+    return correction;
+  };
+
+  const factorsCorrection = getFactorsCorrection();
+  const weightedPrice = baseWeightedPrice * (1 + factorsCorrection / 100);
 
   // Формирование данных для транспорта конкурента
   const getCompetitorTransportText = (comp) => {
@@ -1607,6 +1658,105 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
               </>
             )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Таблица повышающих и понижающих факторов */}
+      <div className="bg-emerald-900/30 rounded-xl border border-emerald-800 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-emerald-800/50">
+              <th className="text-left p-3 text-emerald-200 font-medium">Повышающие и понижающие факторы</th>
+              <th className="text-center p-3 text-emerald-200 font-medium w-32">Вес атрибута</th>
+              <th className="text-center p-3 text-emerald-200 font-medium w-40">Значение</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-t border-emerald-800/50 hover:bg-emerald-900/30">
+              <td className="p-3 text-emerald-300">Какая конкуренция по ассортименту?</td>
+              <td className="p-3 text-center text-emerald-400 font-mono">
+                {(() => {
+                  const val = plotData.marketFactors?.competition;
+                  const corr = val === 'Низкая' ? 5 : val === 'Высокая' ? -5 : 0;
+                  return `${corr > 0 ? '+' : ''}${corr}%`;
+                })()}
+              </td>
+              <td className="p-3 text-center">
+                {isEditable ? (
+                  <select
+                    value={plotData.marketFactors?.competition || 'Средняя'}
+                    onChange={(e) => setPlotData({
+                      ...plotData, 
+                      marketFactors: { ...plotData.marketFactors, competition: e.target.value }
+                    })}
+                    className="bg-emerald-900/50 border border-emerald-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="Низкая">Низкая</option>
+                    <option value="Средняя">Средняя</option>
+                    <option value="Высокая">Высокая</option>
+                  </select>
+                ) : (
+                  <span className="text-white">{plotData.marketFactors?.competition || 'Средняя'}</span>
+                )}
+              </td>
+            </tr>
+            <tr className="border-t border-emerald-800/50 hover:bg-emerald-900/30">
+              <td className="p-3 text-emerald-300">Какая коммерческая стратегия?</td>
+              <td className="p-3 text-center text-emerald-400 font-mono">
+                {(() => {
+                  const val = plotData.marketFactors?.strategy;
+                  const corr = val === 'Продать дорого' ? 3 : val === 'Продать быстро' ? -3 : 0;
+                  return `${corr > 0 ? '+' : ''}${corr}%`;
+                })()}
+              </td>
+              <td className="p-3 text-center">
+                {isEditable ? (
+                  <select
+                    value={plotData.marketFactors?.strategy || 'Оптимально'}
+                    onChange={(e) => setPlotData({
+                      ...plotData, 
+                      marketFactors: { ...plotData.marketFactors, strategy: e.target.value }
+                    })}
+                    className="bg-emerald-900/50 border border-emerald-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="Продать быстро">Продать быстро</option>
+                    <option value="Оптимально">Оптимально</option>
+                    <option value="Продать дорого">Продать дорого</option>
+                  </select>
+                ) : (
+                  <span className="text-white">{plotData.marketFactors?.strategy || 'Оптимально'}</span>
+                )}
+              </td>
+            </tr>
+            <tr className="border-t border-emerald-800/50 hover:bg-emerald-900/30">
+              <td className="p-3 text-emerald-300">Способствует ли рынок продажам и росту?</td>
+              <td className="p-3 text-center text-emerald-400 font-mono">
+                {(() => {
+                  const val = plotData.marketFactors?.marketGrowth;
+                  const corr = val === 'Да' ? 3 : val === 'Нет' ? -3 : 0;
+                  return `${corr > 0 ? '+' : ''}${corr}%`;
+                })()}
+              </td>
+              <td className="p-3 text-center">
+                {isEditable ? (
+                  <select
+                    value={plotData.marketFactors?.marketGrowth || 'Не особо'}
+                    onChange={(e) => setPlotData({
+                      ...plotData, 
+                      marketFactors: { ...plotData.marketFactors, marketGrowth: e.target.value }
+                    })}
+                    className="bg-emerald-900/50 border border-emerald-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="Да">Да</option>
+                    <option value="Не особо">Не особо</option>
+                    <option value="Нет">Нет</option>
+                  </select>
+                ) : (
+                  <span className="text-white">{plotData.marketFactors?.marketGrowth || 'Не особо'}</span>
+                )}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -2361,13 +2511,21 @@ export default function App() {
     floors: '12 - 15',
     productAnalog: 'Беседа',
     apartmentType: 'Евро',
+    parkingType: 'Подземный',
+    parkingCost: 1.5,
     distanceToStop: 250,
     transport: { busTrolley: 1, tram: 0, metro: false },
     socialInfra: { schools: 0, kindergartens: 0, malls: false, clinics: false },
     viewCharacteristics: { gsk: true, industrial: false, railway: false, sea: false, panorama: false, river: false, forest: false, cemetery: false },
     apartmentMix: { studio: 15, one: 15, onePlus: 20, two: 15, twoPlus: 20, three: 10, four: 5 },
     prices: { studio: 160000, one: 154000, onePlus: 148000, two: 142000, twoPlus: 136000, three: 130000, four: 125000 },
-    competitorWeights: {}
+    competitorWeights: {},
+    // Повышающие и понижающие факторы
+    marketFactors: {
+      competition: 'Средняя',      // Низкая (+5%), Средняя (0%), Высокая (-5%)
+      strategy: 'Оптимально',      // Продать быстро (-3%), Оптимально (0%), Продать дорого (+3%)
+      marketGrowth: 'Не особо'     // Да (+3%), Не особо (0%), Нет (-3%)
+    }
   };
 
   // Загрузка данных из localStorage при инициализации
@@ -2692,10 +2850,25 @@ export default function App() {
     const totalWeightSum = manualWeights.reduce((a, b) => a + b, 0);
     const normalizedWeights = manualWeights.map(w => totalWeightSum > 0 ? w / totalWeightSum : 1 / manualWeights.length);
 
-    const weightedPrice = selectedCompetitors.reduce((sum, c, idx) => {
+    const baseWeightedPrice = selectedCompetitors.reduce((sum, c, idx) => {
       const finalPrice = calculateCorrections(c);
       return sum + finalPrice * normalizedWeights[idx];
     }, 0);
+
+    // Расчёт корректировки от факторов
+    const factors = plotData.marketFactors || {};
+    let factorsCorrection = 0;
+    
+    if (factors.competition === 'Низкая') factorsCorrection += 5;
+    else if (factors.competition === 'Высокая') factorsCorrection -= 5;
+    
+    if (factors.strategy === 'Продать быстро') factorsCorrection -= 3;
+    else if (factors.strategy === 'Продать дорого') factorsCorrection += 3;
+    
+    if (factors.marketGrowth === 'Да') factorsCorrection += 3;
+    else if (factors.marketGrowth === 'Нет') factorsCorrection -= 3;
+
+    const weightedPrice = baseWeightedPrice * (1 + factorsCorrection / 100);
 
     return Math.round(weightedPrice);
   }, [competitors, plotData]);
