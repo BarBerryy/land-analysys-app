@@ -988,12 +988,13 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
 
     // 1. Готовность объекта (наш объект всегда 0%)
     // Если готовность конкурента = 0%, цена не меняется
-    // Иначе: Цена скорр. = Цена / (1 + Готовность * 10%)
+    // Иначе: Цена скорр. = Цена / (1 + Готовность * priceGrowth%)
     let priceAfterReadiness = price;
     let readinessCorr = 0;
+    const priceGrowthFactor = (plotData.priceGrowth || 10) / 100; // По умолчанию 10%
     
     if (competitor.readiness > 0) {
-      const readinessFactor = (competitor.readiness / 100) * 0.1; // Готовность * 10%
+      const readinessFactor = (competitor.readiness / 100) * priceGrowthFactor;
       priceAfterReadiness = price / (1 + readinessFactor);
       readinessCorr = ((priceAfterReadiness - price) / price) * 100; // Корректировка в %
     }
@@ -1757,6 +1758,32 @@ const CorrectionsTab = ({ competitors, setCompetitors, plotData, setPlotData, pr
                 </tr>
               </>
             )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Средний прирост цены */}
+      <div className="bg-emerald-900/30 rounded-xl border border-emerald-800 overflow-hidden">
+        <table className="w-full text-sm">
+          <tbody>
+            <tr className="hover:bg-emerald-900/30">
+              <td className="p-3 text-emerald-300">Средний прирост цены от старта продаж до конца реализации проекта, %</td>
+              <td className="p-3 text-center w-32">
+                {isEditable ? (
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="100"
+                    value={plotData.priceGrowth || 10}
+                    onChange={(e) => setPlotData({...plotData, priceGrowth: parseFloat(e.target.value) || 10})}
+                    className="w-20 px-2 py-1 bg-emerald-900/50 border border-emerald-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                  />
+                ) : (
+                  <span className="text-white font-mono">{plotData.priceGrowth || 10}%</span>
+                )}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -2621,6 +2648,8 @@ export default function App() {
     apartmentMix: { studio: 15, one: 15, onePlus: 20, two: 15, twoPlus: 20, three: 10, four: 5 },
     prices: { studio: 160000, one: 154000, onePlus: 148000, two: 142000, twoPlus: 136000, three: 130000, four: 125000 },
     competitorWeights: {},
+    // Средний прирост цены от старта продаж до конца реализации проекта
+    priceGrowth: 10,
     // Повышающие и понижающие факторы
     marketFactors: {
       competition: 'Средняя',      // Низкая (+5%), Средняя (0%), Высокая (-5%)
@@ -2845,10 +2874,11 @@ export default function App() {
     // Функция расчёта корректировок (дублирует логику из CorrectionsTab)
     const calculateCorrections = (competitor) => {
       let price = competitor.priceRealization;
+      const priceGrowthFactor = (plotData.priceGrowth || 10) / 100;
 
       // 1. Готовность объекта
       if (competitor.readiness > 0) {
-        const readinessFactor = (competitor.readiness / 100) * 0.1;
+        const readinessFactor = (competitor.readiness / 100) * priceGrowthFactor;
         price = price / (1 + readinessFactor);
       }
 
